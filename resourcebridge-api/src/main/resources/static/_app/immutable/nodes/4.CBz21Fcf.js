@@ -1,0 +1,1 @@
+import"../chunks/DsnmJJEf.js";import{p,o as e,b as i}from"../chunks/DN7v_DnX.js";import{s as m,a as u}from"../chunks/v7eBrZSo.js";import{g as o}from"../chunks/wsoSO2io.js";import{a as t}from"../chunks/BsiMSzqb.js";function b(f,s){p(s,!0);const a=()=>u(t,"$auth",r),[r,n]=m();e(()=>{if(t.init(),!a().token){o("/login");return}o("/dashboard/staff")}),i(),n()}export{b as component};

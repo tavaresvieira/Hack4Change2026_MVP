@@ -1,0 +1,1 @@
+import{a as o}from"./DjtTpxca.js";const s=(t,i)=>o("/auth/login",{method:"POST",body:JSON.stringify({email:t,password:i})}),e=t=>o("/auth/register",{method:"POST",body:JSON.stringify(t)});export{s as l,e as r};

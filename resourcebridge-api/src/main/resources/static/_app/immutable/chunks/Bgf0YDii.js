@@ -1,0 +1,1 @@
+import{w as c}from"./ByOogDVz.js";const{subscribe:n,update:o}=c([]);let r=0;const d={subscribe:n};function b(e,i="success"){const t=r++;o(s=>[...s,{id:t,message:e,type:i}]),setTimeout(()=>{o(s=>s.filter(a=>a.id!==t))},3500)}export{b as s,d as t};

@@ -24,51 +24,72 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
         http
             .csrf(AbstractHttpConfigurer::disable)
-            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .sessionManagement(session ->
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
             .authorizeHttpRequests(auth -> auth
 
-                // --- Public endpoints ---
+                // =============================
+                // Allow Svelte frontend static files
+                // =============================
+                .requestMatchers(
+                        "/",
+                        "/index.html",
+                        "/robots.txt",
+                        "/favicon.ico",
+                        "/_app/**"
+                ).permitAll()
+
+                // =============================
+                // Public API endpoints
+                // =============================
                 .requestMatchers("/api/auth/**").permitAll()
 
-                // Donors browse needs, items, orgs, announcements without logging in
                 .requestMatchers(HttpMethod.GET, "/api/needs/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/organizations/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/items/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/announcements/**").permitAll()
 
-                // Donors submit donations without an account — auto-matching fires server-side
                 .requestMatchers(HttpMethod.POST, "/api/donations").permitAll()
 
-                // --- Shelter Staff (authenticated) ---
+                // =============================
+                // Shelter Staff endpoints
+                // =============================
                 .requestMatchers(HttpMethod.POST, "/api/needs").hasRole("STAFF")
                 .requestMatchers(HttpMethod.PATCH, "/api/needs/*/fulfill").hasRole("STAFF")
+
                 .requestMatchers(HttpMethod.POST, "/api/inventory").hasRole("STAFF")
                 .requestMatchers(HttpMethod.PUT, "/api/inventory/**").hasRole("STAFF")
                 .requestMatchers(HttpMethod.GET, "/api/inventory/**").hasRole("STAFF")
+
                 .requestMatchers(HttpMethod.POST, "/api/announcements").hasRole("STAFF")
 
-                // Staff see incoming transfers, confirm receipt, and delete
                 .requestMatchers(HttpMethod.GET, "/api/transfers", "/api/transfers/**").hasRole("STAFF")
                 .requestMatchers(HttpMethod.PATCH, "/api/transfers/**").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/api/transfers/**").authenticated()
 
-                // Staff can see donation details
                 .requestMatchers(HttpMethod.GET, "/api/donations/**").hasRole("STAFF")
 
+                // =============================
                 // Everything else requires authentication
+                // =============================
                 .anyRequest().authenticated()
             )
+
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
