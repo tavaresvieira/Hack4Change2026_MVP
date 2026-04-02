@@ -7,5 +7,7 @@ export const getByOrg = (orgId: number, token: string) => apiFetch<Need[]>(`/nee
 export const getByUrgency = (urgency: string, token: string) => apiFetch<Need[]>(`/needs/urgency/${urgency}`, {}, token);
 export const createNeed = (data: object, token: string) =>
   apiFetch<Need>('/needs', { method: 'POST', body: JSON.stringify(data) }, token);
+export const updateNeed = (id: number, data: object, token: string) =>
+  apiFetch<Need>(`/needs/${id}`, { method: 'PUT', body: JSON.stringify(data) }, token);
 export const fulfillNeed = (id: number, token: string) =>
   apiFetch<Need>(`/needs/${id}/fulfill`, { method: 'PATCH' }, token);

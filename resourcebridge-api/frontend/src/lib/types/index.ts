@@ -74,6 +74,7 @@ export interface Announcement {
   quantity: number;
   type: AnnouncementType;
   message: string;
+  expiryDate: string | null;
   createdAt: string;
 }
 
@@ -84,4 +85,5 @@ export interface AuthResponse {
   email: string;
   role: Role;
   organizationId: number;
+  organizationName: string | null;
 }

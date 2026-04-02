@@ -4,7 +4,7 @@
   import { auth } from '$lib/stores/auth';
   import { onMount } from 'svelte';
 
-  onMount(() => auth.init());
+  onMount(() => { auth.init(); });
 
   let { children } = $props();
 </script>

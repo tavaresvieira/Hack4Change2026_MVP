@@ -8,10 +8,11 @@ interface AuthState {
   email: string | null;
   role: Role | null;
   organizationId: number | null;
+  organizationName: string | null;
 }
 
 const defaultState: AuthState = {
-  id: null, token: null, name: null, email: null, role: null, organizationId: null
+  id: null, token: null, name: null, email: null, role: null, organizationId: null, organizationName: null
 };
 
 function createAuthStore() {
@@ -26,7 +27,7 @@ function createAuthStore() {
         try { set(JSON.parse(stored)); } catch { set(defaultState); }
       }
     },
-    setAuth: (data: { id: number; token: string; name: string; email: string; role: Role; organizationId: number }) => {
+    setAuth: (data: { id: number; token: string; name: string; email: string; role: Role; organizationId: number; organizationName: string | null }) => {
       set(data);
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('auth', JSON.stringify(data));

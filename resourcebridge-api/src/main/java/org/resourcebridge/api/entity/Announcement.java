@@ -32,6 +32,8 @@ public class Announcement {
 
     private String message;
 
+    private String expiryDate;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 

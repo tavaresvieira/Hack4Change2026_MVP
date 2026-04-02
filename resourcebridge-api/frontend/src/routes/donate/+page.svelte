@@ -148,14 +148,17 @@
 
   // ── Lifecycle ─────────────────────────────────────────
   onMount(async () => {
-    // Open donate tab directly when ?tab=donate is in the URL
-    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'donate') {
-      activeTab = 'donate';
-    }
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    if (params?.get('tab') === 'donate') activeTab = 'donate';
     try {
       const [n, i, o] = await Promise.all([getUnfulfilled(), getItems(), getOrgs()]);
       needs = n; items = i; orgs = o;
       if (i.length > 0) selectedItemId = i[0].id;
+      // Pre-fill from "Donate this" on main/browse pages
+      const orgId = params?.get('orgId');
+      const itemId = params?.get('itemId');
+      if (orgId) selectedOrgId = Number(orgId);
+      if (itemId) selectedItemId = Number(itemId);
     } catch {}
     finally { loading = false; }
   });
@@ -249,7 +252,7 @@
           </div>
           <input type="text" bind:value={searchQuery}
             placeholder="Search by item or organization…"
-            class="w-full pl-9 pr-8 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400" />
+            class="w-full pl-9 pr-8 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500 placeholder-gray-400" />
           {#if searchQuery}
             <button onclick={() => searchQuery = ''}
               class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600">
@@ -412,7 +415,7 @@
                   Shelter <span class="text-gray-400 font-normal">(optional — leave blank to let the system match)</span>
                 </label>
                 <select bind:value={selectedOrgId}
-                  class="w-full rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500 text-sm py-2.5">
+                  class="w-full rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500 text-sm py-2.5 text-gray-900 bg-white">
                   <option value={null}>Any shelter — best match</option>
                   {#each orgs as org}
                     {@const c = needs.filter(n => !n.fulfilled && n.organization.id === org.id).length}
@@ -444,7 +447,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">Item</label>
                 {#if availableItems.length > 0}
                   <select bind:value={selectedItemId}
-                    class="w-full rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500 text-sm py-2.5">
+                    class="w-full rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500 text-sm py-2.5 text-gray-900 bg-white">
                     {#each availableItems as item}
                       <option value={item.id}>{item.name}</option>
                     {/each}
@@ -461,7 +464,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
                 <div class="flex items-center gap-3">
                   <input type="number" bind:value={quantity} min="1" required
-                    class="flex-1 rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500 text-sm py-2.5" />
+                    class="flex-1 rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500 text-sm py-2.5 text-gray-900 bg-white" />
                   {#if selectedItem}
                     <span class="text-sm text-gray-400">{selectedItem.unit}</span>
                   {/if}
@@ -475,7 +478,7 @@
                     Expiry date <span class="text-gray-400 font-normal">(optional)</span>
                   </label>
                   <input type="date" bind:value={expiryDate}
-                    class="w-full rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500 text-sm py-2.5" />
+                    class="w-full rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500 text-sm py-2.5 text-gray-900 bg-white" />
                 </div>
               {/if}
 
@@ -526,7 +529,7 @@
                     <div>
                       <label class="block text-sm font-medium text-gray-700 mb-2">Your city</label>
                       <select bind:value={donorCity}
-                        class="w-full rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500 text-sm py-2.5">
+                        class="w-full rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500 text-sm py-2.5 text-gray-900 bg-white">
                         {#each ALL_AREAS as area}<option value={area}>{area}</option>{/each}
                       </select>
                     </div>
@@ -600,7 +603,7 @@
                       <input type="text" bind:value={pickupAddress}
                         oninput={() => addressError = validateAddress(pickupAddress)}
                         onblur={() => addressError = validateAddress(pickupAddress)}
-                        class="w-full rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500 text-sm py-2.5
+                        class="w-full rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500 text-sm py-2.5 text-gray-900 bg-white
                                {addressError ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : ''}"
                         placeholder="45 Elmwood Dr" />
                       {#if addressError}
@@ -642,7 +645,7 @@
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Your name</label>
                 <input type="text" bind:value={donorName} required
-                  class="w-full rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500 text-sm py-2.5"
+                  class="w-full rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500 text-sm py-2.5 text-gray-900 bg-white"
                   placeholder="Jane Smith" />
               </div>
               <div>
@@ -650,7 +653,7 @@
                 <input type="email" bind:value={donorEmail} required
                   oninput={() => emailError = validateEmail(donorEmail)}
                   onblur={() => emailError = validateEmail(donorEmail)}
-                  class="w-full rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500 text-sm py-2.5
+                  class="w-full rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500 text-sm py-2.5 text-gray-900 bg-white
                          {emailError ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : ''}"
                   placeholder="jane@email.com" />
                 {#if emailError}
@@ -664,7 +667,7 @@
                 <input type="tel" bind:value={donorPhone}
                   oninput={() => phoneError = validatePhone(donorPhone)}
                   onblur={() => phoneError = validatePhone(donorPhone)}
-                  class="w-full rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500 text-sm py-2.5
+                  class="w-full rounded-xl border-gray-200 focus:border-brand-500 focus:ring-brand-500 text-sm py-2.5 text-gray-900 bg-white
                          {phoneError ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : ''}"
                   placeholder="506-555-0123" />
                 {#if phoneError}

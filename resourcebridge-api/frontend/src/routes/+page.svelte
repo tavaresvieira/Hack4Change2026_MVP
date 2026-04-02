@@ -7,7 +7,12 @@
   let needs   = $state<Need[]>([]);
   let loading = $state(true);
 
-  let urgentNeeds = $derived(needs.filter(n => n.urgency === 'CRITICAL' || n.urgency === 'HIGH'));
+  const URGENCY_ORDER: Record<string, number> = { CRITICAL: 0, HIGH: 1 };
+  let urgentNeeds = $derived(
+    needs
+      .filter(n => n.urgency === 'CRITICAL' || n.urgency === 'HIGH')
+      .sort((a, b) => (URGENCY_ORDER[a.urgency] ?? 1) - (URGENCY_ORDER[b.urgency] ?? 1))
+  );
 
   onMount(async () => {
     try {
@@ -89,7 +94,7 @@
                 </div>
                 <div class="flex flex-col items-end gap-2 shrink-0">
                   <UrgencyBadge urgency={need.urgency} />
-                  <a href="/donate?tab=donate"
+                  <a href="/donate?tab=donate&orgId={need.organization?.id}&itemId={need.item?.id}"
                     class="bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold
                            px-5 py-2 rounded-xl transition-colors whitespace-nowrap">
                     Donate this

@@ -48,6 +48,12 @@ public class NeedController {
         return ResponseEntity.ok(needService.save(need));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Need> update(@PathVariable Long id, @RequestBody Need need) {
+        need.setId(id);
+        return ResponseEntity.ok(needService.save(need));
+    }
+
     // PATCH /api/needs/1/fulfill — coordinator/staff marks need as fulfilled
     @PatchMapping("/{id}/fulfill")
     public ResponseEntity<Need> markFulfilled(@PathVariable Long id) {

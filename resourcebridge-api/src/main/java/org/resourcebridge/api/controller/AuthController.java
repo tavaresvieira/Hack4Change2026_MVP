@@ -58,7 +58,8 @@ public class AuthController {
                 user.getName(),
                 user.getEmail(),
                 user.getRole(),
-                organization.getId()
+                organization.getId(),
+                organization.getName()
         ));
     }
 
@@ -77,13 +78,16 @@ public class AuthController {
 
         Long orgId = user.getOrganization() != null ? user.getOrganization().getId() : null;
 
+        String orgName = user.getOrganization() != null ? user.getOrganization().getName() : null;
+
         return ResponseEntity.ok(new AuthResponse(
                 user.getId(),
                 token,
                 user.getName(),
                 user.getEmail(),
                 user.getRole(),
-                orgId
+                orgId,
+                orgName
         ));
     }
 }
