@@ -11,6 +11,7 @@ import org.resourcebridge.api.repository.InvitationRepository;
 import org.resourcebridge.api.repository.OrganizationRepository;
 import org.resourcebridge.api.repository.UserRepository;
 import org.resourcebridge.api.service.EmailService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import jakarta.validation.Valid;
@@ -28,6 +29,9 @@ public class InvitationController {
     private final OrganizationRepository organizationRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
+
+    @Value("${app.base-url}")
+    private String appBaseUrl;
 
     // POST /api/invitations — ADMIN only, generates a staff invite link
     @PostMapping
@@ -53,7 +57,7 @@ public class InvitationController {
         invitation.setExpiresAt(LocalDateTime.now().plusDays(7));
         invitationRepository.save(invitation);
 
-        String inviteUrl = "http://localhost:5173/register?token=" + token;
+        String inviteUrl = appBaseUrl + "/register.html?token=" + token;
 
         // Send email asynchronously — won't block the response
         emailService.sendInviteEmail(request.getEmail(), token, organization.getName(), role.name());

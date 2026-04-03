@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.resourcebridge.api.entity.Donation;
 import org.resourcebridge.api.entity.Transfer;
-import org.resourcebridge.api.enums.DonationStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -27,7 +26,7 @@ public class EmailService {
     @Value("${mail.from:ResourceBridge <noreply@resourcebridge.ca>}")
     private String fromAddress;
 
-    @Value("${app.base-url:http://localhost:5173}")
+    @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
 
     // ── Invite email ──────────────────────────────────────────────────────────
@@ -39,7 +38,7 @@ public class EmailService {
             return;
         }
 
-        String inviteUrl = baseUrl + "/register?token=" + inviteToken;
+        String inviteUrl = baseUrl + "/register.html?token=" + inviteToken;
         boolean isAdmin = "ADMIN".equals(role);
         String roleLabel = isAdmin ? "Admin" : "Shelter Staff";
         String accentColor = isAdmin ? "#7c3aed" : "#16a34a";
@@ -96,8 +95,16 @@ public class EmailService {
                   </table>
                 </body>
                 </html>
-                """.formatted(accentColor, organizationName, accentColor, roleLabel,
-                             accentColor, inviteUrl, inviteUrl, inviteUrl);
+                """.formatted(
+                accentColor,
+                organizationName,
+                accentColor,
+                roleLabel,
+                accentColor,
+                inviteUrl,
+                inviteUrl,
+                inviteUrl
+        );
 
         send(toEmail, subject, html);
     }
@@ -113,7 +120,7 @@ public class EmailService {
         if (donation.getDonorEmail() == null) return;
 
         String subject = buildStatusSubject(donation);
-        if (subject == null) return; // status doesn't warrant an email
+        if (subject == null) return;
 
         String html = buildStatusHtml(donation);
         send(donation.getDonorEmail(), subject, html);
@@ -184,7 +191,7 @@ public class EmailService {
                           <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.6;">%s</p>
                           <p style="margin:0;font-size:13px;color:#9ca3af;">
                             You can track all your donations at
-                            <a href="%s/donor" style="color:#16a34a;">%s/donor</a>
+                            <a href="%s" style="color:#16a34a;">%s</a>
                           </p>
                         </td></tr>
 
@@ -200,7 +207,13 @@ public class EmailService {
                   </table>
                 </body>
                 </html>
-                """.formatted(icon, headline, message, baseUrl, baseUrl);
+                """.formatted(
+                icon,
+                headline,
+                message,
+                baseUrl + "/donate.html",
+                baseUrl + "/donate.html"
+        );
     }
 
     // ── Staff match notification ──────────────────────────────────────────────
@@ -226,7 +239,7 @@ public class EmailService {
         boolean isPickup = "PICKUP_REQUEST".equals(donationType);
         String pickupInfo = isPickup && transfer.getDonation().getPickupAddress() != null
                 ? transfer.getDonation().getPickupAddress() + (transfer.getDonation().getPickupCity() != null
-                  ? ", " + transfer.getDonation().getPickupCity() : "")
+                ? ", " + transfer.getDonation().getPickupCity() : "")
                 : null;
 
         String subject = "New donation matched to " + orgName + " — ResourceBridge";
@@ -276,7 +289,7 @@ public class EmailService {
                           </table>
 
                           <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6;">
-                            Log in to <a href="%s/login" style="color:#16a34a;">ResourceBridge</a>
+                            Log in to <a href="%s/login.html" style="color:#16a34a;">ResourceBridge</a>
                             to confirm receipt once the donation arrives.
                           </p>
                         </td></tr>
