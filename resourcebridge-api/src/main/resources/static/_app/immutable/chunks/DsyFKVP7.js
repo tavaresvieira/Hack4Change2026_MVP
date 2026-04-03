@@ -1,0 +1,1 @@
+import{a}from"./Bgyenp3F.js";const t=n=>a("/financial-donations",{method:"POST",body:JSON.stringify(n)}),o=n=>a("/financial-donations",{},n),s=n=>a("/financial-donations/stats",{},n);export{s as a,o as g,t as s};

@@ -29,6 +29,17 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
 
+                // --- Static frontend (Svelte build) ---
+                .requestMatchers(
+                    "/",
+                    "/index.html",
+                    "/*.html",
+                    "/_app/**",
+                    "/favicon.ico",
+                    "/favicon.png",
+                    "/robots.txt"
+                ).permitAll()
+
                 // --- Public endpoints ---
                 .requestMatchers("/api/auth/**").permitAll()
 

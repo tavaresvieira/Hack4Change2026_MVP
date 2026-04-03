@@ -1,0 +1,1 @@
+import{a as i}from"./Bgyenp3F.js";const s=(t,a,e,n="STAFF")=>i("/invitations",{method:"POST",body:JSON.stringify({email:t,organizationId:a,role:n})},e),v=t=>i(`/invitations/validate/${t}`);export{s as c,v};

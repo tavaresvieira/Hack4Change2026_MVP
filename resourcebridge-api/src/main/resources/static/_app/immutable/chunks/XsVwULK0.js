@@ -1,0 +1,1 @@
+import{aE as c}from"./Ca_s6KbO.js";const{subscribe:n,update:o}=c([]);let r=0;const d={subscribe:n};function b(e,a="success"){const t=r++;o(s=>[...s,{id:t,message:e,type:a}]),setTimeout(()=>{o(s=>s.filter(i=>i.id!==t))},3500)}export{b as s,d as t};

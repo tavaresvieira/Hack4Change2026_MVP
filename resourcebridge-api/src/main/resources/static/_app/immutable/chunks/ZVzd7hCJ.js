@@ -1,0 +1,1 @@
+import{a as o}from"./Bgyenp3F.js";const e=(t,i)=>o("/auth/login",{method:"POST",body:JSON.stringify({email:t,password:i})}),r=t=>o("/auth/register",{method:"POST",body:JSON.stringify(t)}),a=t=>o("/auth/register-by-invite",{method:"POST",body:JSON.stringify(t)}),g=t=>o("/auth/logout",{method:"POST",body:JSON.stringify({refreshToken:t})});export{r as a,g as b,e as l,a as r};
