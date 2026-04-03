@@ -1,6 +1,7 @@
 package org.resourcebridge.api.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.resourcebridge.api.enums.DonationStatus;
 import org.resourcebridge.api.enums.DonationType;
@@ -19,17 +20,22 @@ public class Donation {
     private Long id;
 
     // Stored as plain name+email+phone for donors (no account required)
+    @NotBlank(message = "Donor name is required")
     private String donorName;
 
+    @NotBlank(message = "Donor email is required")
+    @Email(message = "Must be a valid email address")
     @Column(nullable = false)
     private String donorEmail;
 
     private String donorPhone;
 
+    @NotNull(message = "Item is required")
     @ManyToOne
     @JoinColumn(name = "item_id", nullable = false)
     private Item item;
 
+    @Min(value = 1, message = "Quantity must be at least 1")
     @Column(nullable = false)
     private int quantity;
 

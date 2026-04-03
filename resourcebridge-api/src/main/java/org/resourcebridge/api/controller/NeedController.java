@@ -1,10 +1,15 @@
 package org.resourcebridge.api.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.resourcebridge.api.dto.PageResponse;
 import org.resourcebridge.api.entity.Need;
 import org.resourcebridge.api.enums.Urgency;
+import org.resourcebridge.api.repository.NeedRepository;
 import org.resourcebridge.api.service.NeedService;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,11 +20,25 @@ import java.util.List;
 public class NeedController {
 
     private final NeedService needService;
+    private final NeedRepository needRepository;
 
     // GET /api/needs — all unfulfilled needs (donor/coordinator view)
     @GetMapping
     public List<Need> getUnfulfilled() {
         return needService.findUnfulfilledNeeds();
+    }
+
+    // GET /api/needs/page?page=0&size=12 — paginated unfulfilled needs (public homepage)
+    @GetMapping("/page")
+    public PageResponse<Need> getUnfulfilledPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        var pageable = PageRequest.of(page, size,
+                Sort.by(
+                    Sort.Order.asc("urgency"), // CRITICAL first via DB collation — see urgency order note
+                    Sort.Order.desc("createdAt")
+                ));
+        return PageResponse.of(needRepository.findByFulfilled(false, pageable));
     }
 
     @GetMapping("/all")
@@ -44,12 +63,12 @@ public class NeedController {
     }
 
     @PostMapping
-    public ResponseEntity<Need> create(@RequestBody Need need) {
+    public ResponseEntity<Need> create(@Valid @RequestBody Need need) {
         return ResponseEntity.ok(needService.save(need));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Need> update(@PathVariable Long id, @RequestBody Need need) {
+    public ResponseEntity<Need> update(@PathVariable Long id, @Valid @RequestBody Need need) {
         need.setId(id);
         return ResponseEntity.ok(needService.save(need));
     }

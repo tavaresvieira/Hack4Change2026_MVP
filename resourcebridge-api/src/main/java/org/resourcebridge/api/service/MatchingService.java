@@ -6,10 +6,12 @@ import org.resourcebridge.api.entity.Donation;
 import org.resourcebridge.api.entity.Need;
 import org.resourcebridge.api.entity.Transfer;
 import org.resourcebridge.api.enums.DonationStatus;
+import org.resourcebridge.api.enums.Role;
 import org.resourcebridge.api.enums.TransferStatus;
 import org.resourcebridge.api.repository.DonationRepository;
 import org.resourcebridge.api.repository.NeedRepository;
 import org.resourcebridge.api.repository.TransferRepository;
+import org.resourcebridge.api.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -22,6 +24,8 @@ public class MatchingService {
     private final NeedRepository needRepository;
     private final TransferRepository transferRepository;
     private final DonationRepository donationRepository;
+    private final UserRepository userRepository;
+    private final EmailService emailService;
 
     /**
      * Called after a donation is submitted.
@@ -74,6 +78,18 @@ public class MatchingService {
                 donation.getDonorName(),
                 bestNeed.getOrganization().getName(),
                 qty);
+
+        // Notify donor that their donation was matched (ASSIGNED)
+        emailService.sendDonationStatusEmail(donation);
+
+        // Notify all active staff at the receiving organization
+        List<String> staffEmails = userRepository
+                .findByOrganizationId(bestNeed.getOrganization().getId())
+                .stream()
+                .filter(u -> u.getRole() == Role.STAFF || u.getRole() == Role.ADMIN)
+                .map(u -> u.getEmail())
+                .toList();
+        emailService.sendStaffMatchNotification(staffEmails, transfer);
 
         return transfer;
     }

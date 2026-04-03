@@ -28,6 +28,7 @@ public class DataLoader implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        // Skip seeding if data already exists
         if (organizationRepository.count() > 0) return;
 
         // ── ORGANIZATIONS ──────────────────────────────────────────
@@ -54,10 +55,11 @@ public class DataLoader implements CommandLineRunner {
         Item shampoo   = item("Shampoo",             "250ml bottle",                      "bottles", false, ItemCategory.HYGIENE);
         Item jeans     = item("Jeans",               "Mixed sizes",                       "pieces",  false, ItemCategory.CLOTHING);
 
-        // ── DEMO USERS (STAFF only) ─────────────────────────────────
-        user("James Staff",    "staff@resourcebridge.ca",  "demo1234", Role.STAFF, nazareth);
-        user("Marie Lefebvre", "marie@harvesthouse.ca",    "demo1234", Role.STAFF, harvest);
-        user("Tom Walsh",      "tom@crossroads.ca",        "demo1234", Role.STAFF, crossroads);
+        // ── DEMO USERS ──────────────────────────────────────────────
+        user("Admin User",     "admin@resourcebridge.ca",  "admin1234", Role.ADMIN, nazareth);
+        user("James Staff",    "staff@resourcebridge.ca",  "demo1234",  Role.STAFF, nazareth);
+        user("Marie Lefebvre", "marie@harvesthouse.ca",    "demo1234",  Role.STAFF, harvest);
+        user("Tom Walsh",      "tom@crossroads.ca",        "demo1234",  Role.STAFF, crossroads);
 
         // ── INVENTORY ──────────────────────────────────────────────
         inventory(nazareth, soup,      24, LocalDate.now().plusDays(5));   // expiring soon!

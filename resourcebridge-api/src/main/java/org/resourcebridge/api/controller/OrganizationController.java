@@ -3,6 +3,7 @@ package org.resourcebridge.api.controller;
 import lombok.RequiredArgsConstructor;
 import org.resourcebridge.api.entity.Organization;
 import org.resourcebridge.api.service.OrganizationService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,12 +32,12 @@ public class OrganizationController {
     }
 
     @PostMapping
-    public ResponseEntity<Organization> create(@RequestBody Organization organization) {
+    public ResponseEntity<Organization> create(@Valid @RequestBody Organization organization) {
         return ResponseEntity.ok(organizationService.save(organization));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Organization> update(@PathVariable Long id, @RequestBody Organization updated) {
+    public ResponseEntity<Organization> update(@PathVariable Long id, @Valid @RequestBody Organization updated) {
         Organization existing = organizationService.getById(id);
         existing.setName(updated.getName());
         existing.setType(updated.getType());

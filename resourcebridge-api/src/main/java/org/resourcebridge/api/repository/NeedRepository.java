@@ -2,6 +2,8 @@ package org.resourcebridge.api.repository;
 
 import org.resourcebridge.api.entity.Need;
 import org.resourcebridge.api.enums.Urgency;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +17,8 @@ public interface NeedRepository extends JpaRepository<Need, Long> {
     List<Need> findByOrganizationId(Long organizationId);
 
     List<Need> findByFulfilled(boolean fulfilled);
+
+    Page<Need> findByFulfilled(boolean fulfilled, Pageable pageable);
 
     List<Need> findByOrganizationIdAndFulfilled(Long organizationId, boolean fulfilled);
 

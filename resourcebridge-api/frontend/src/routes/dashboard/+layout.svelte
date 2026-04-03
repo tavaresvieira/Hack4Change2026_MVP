@@ -1,8 +1,9 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
-  import { auth } from '$lib/stores/auth';
+  import { auth, isAdmin } from '$lib/stores/auth';
   import { darkMode } from '$lib/stores/darkMode';
+  import { logout as apiLogout } from '$lib/api/auth';
   import { onMount, onDestroy } from 'svelte';
   import type { Snippet } from 'svelte';
 
@@ -18,10 +19,15 @@
     darkMode.disable();
   });
 
+  let sidebarOpen = $state(false);
   let confirmingLogout = $state(false);
 
-  function logout() {
+  async function logout() {
+    const refreshToken = $auth.refreshToken;
     auth.clear();
+    if (refreshToken) {
+      await apiLogout(refreshToken).catch(() => {});
+    }
     goto('/');
   }
 
@@ -33,29 +39,74 @@
     { href: '/dashboard/staff#needs', label: 'Our Needs', icon: '📋' },
     { href: '/dashboard/staff#transfers', label: 'Incoming', icon: '🚚' },
     { href: '/dashboard/staff#announcements', label: 'Announcements', icon: '📢' },
+    { href: '/dashboard/staff#community', label: 'Community', icon: '🌐' },
+    { href: '/dashboard/staff#exchanges', label: 'Exchanges', icon: '🤝' },
   ];
+
+  const adminNav = [
+    { href: '/dashboard/admin', label: 'Dashboard', icon: '🛡️' },
+    { href: '/dashboard/admin/organizations', label: 'Organizations', icon: '🏠' },
+    { href: '/dashboard/admin/staff', label: 'Staff', icon: '👥' },
+    { href: '/dashboard/admin/invite', label: 'Invite Member', icon: '✉️' },
+    { href: '/dashboard/admin/financial-donations', label: 'Financial Donations', icon: '💰' },
+  ];
+
+  let navItems = $derived($isAdmin ? adminNav : staffNav);
+  let roleLabel = $derived($isAdmin ? 'Admin' : 'Shelter Staff');
+  let roleBadgeClass = $derived($isAdmin
+    ? 'bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400'
+    : 'bg-brand-100 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400'
+  );
 </script>
 
 {#if $auth.token}
 <div class="min-h-screen flex bg-gray-50 dark:bg-gray-900">
+
+  <!-- MOBILE OVERLAY -->
+  {#if sidebarOpen}
+    <div
+      class="fixed inset-0 bg-black/40 z-20 lg:hidden"
+      onclick={() => sidebarOpen = false}
+      role="button"
+      tabindex="-1"
+      aria-label="Close sidebar">
+    </div>
+  {/if}
+
   <!-- SIDEBAR -->
-  <aside class="w-56 bg-white dark:bg-gray-800 border-r border-gray-100 dark:border-gray-700 flex flex-col fixed h-full shadow-sm">
-    <div class="p-4 border-b border-gray-100 dark:border-gray-700">
-      <a href="/" class="flex items-center gap-2">
+  <aside class="
+    w-64 bg-white dark:bg-gray-800 border-r border-gray-100 dark:border-gray-700
+    flex flex-col fixed h-full shadow-sm z-30 transition-transform duration-200
+    {sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+  ">
+    <div class="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+      <a href="/dashboard" class="flex items-center gap-2">
         <div class="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center flex-shrink-0">
           <span class="text-white font-bold text-sm">RB</span>
         </div>
         <span class="font-bold text-gray-900 dark:text-white text-sm">ResourceBridge</span>
       </a>
+      <!-- Close button (mobile only) -->
+      <button
+        onclick={() => sidebarOpen = false}
+        class="lg:hidden p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        aria-label="Close menu">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
     </div>
 
-    <nav class="flex-1 p-3 space-y-1">
-      {#each staffNav as item}
+    <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+      {#each navItems as item}
         <a
           href={item.href}
-          class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-            {currentPath === item.href ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-400' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}">
-          <span>{item.icon}</span>
+          onclick={() => sidebarOpen = false}
+          class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+            {currentPath === item.href
+              ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-400'
+              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'}">
+          <span class="text-base">{item.icon}</span>
           {item.label}
         </a>
       {/each}
@@ -70,8 +121,8 @@
           </button>
         </div>
         <div class="text-xs text-gray-400 truncate">{$auth.email}</div>
-        <div class="inline-flex items-center mt-1 px-2 py-0.5 bg-brand-100 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 rounded-full text-xs font-medium">
-          Shelter Staff
+        <div class="inline-flex items-center mt-1 px-2 py-0.5 {roleBadgeClass} rounded-full text-xs font-medium">
+          {roleLabel}
         </div>
       </div>
       {#if confirmingLogout}
@@ -93,8 +144,28 @@
   </aside>
 
   <!-- MAIN CONTENT -->
-  <main class="flex-1 ml-56 p-6">
-    {@render children()}
-  </main>
+  <div class="flex-1 flex flex-col min-w-0 lg:ml-64">
+    <!-- MOBILE TOPBAR -->
+    <header class="lg:hidden sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 py-3 flex items-center gap-3">
+      <button
+        onclick={() => sidebarOpen = true}
+        class="p-1.5 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        aria-label="Open menu">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 bg-brand-500 rounded flex items-center justify-center">
+          <span class="text-white font-bold text-xs">RB</span>
+        </div>
+        <span class="font-semibold text-gray-900 dark:text-white text-sm">ResourceBridge</span>
+      </div>
+    </header>
+
+    <main class="flex-1 p-4 lg:p-6 overflow-x-hidden">
+      {@render children()}
+    </main>
+  </div>
 </div>
 {/if}

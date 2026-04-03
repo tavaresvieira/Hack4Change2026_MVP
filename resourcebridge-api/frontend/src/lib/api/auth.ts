@@ -18,3 +18,19 @@ export const register = (data: {
     method: 'POST',
     body: JSON.stringify(data),
   });
+
+export const registerByInvite = (data: {
+  token: string;
+  name: string;
+  password: string;
+}) =>
+  apiFetch<AuthResponse>('/auth/register-by-invite', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+
+export const logout = (refreshToken: string) =>
+  apiFetch<void>('/auth/logout', {
+    method: 'POST',
+    body: JSON.stringify({ refreshToken }),
+  });

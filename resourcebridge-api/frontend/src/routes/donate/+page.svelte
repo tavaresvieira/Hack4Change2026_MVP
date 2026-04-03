@@ -4,6 +4,7 @@
   import { getAll as getItems } from '$lib/api/items';
   import { getAll as getOrgs } from '$lib/api/organizations';
   import { createDonation } from '$lib/api/donations';
+  import { submitFinancialDonation } from '$lib/api/financialDonations';
   import { showToast } from '$lib/stores/toast';
   import UrgencyBadge from '$lib/components/UrgencyBadge.svelte';
   import type { Need, Item, Donation, ItemCategory, Organization } from '$lib/types';
@@ -35,7 +36,7 @@
   let loading = $state(true);
 
   // ── UI state ──────────────────────────────────────────
-  let activeTab         = $state<'browse' | 'donate'>('browse');
+  let activeTab         = $state<'browse' | 'donate' | 'financial'>('browse');
   let submittedDonation = $state<Donation | null>(null);
 
   // Browse filters — single dropdown value like 'cat:FOOD' or 'urg:CRITICAL'
@@ -60,6 +61,33 @@
   let donorCity     = $state(PICKUP_AREAS[0]);   // used for pickup range + voluntary nearest
   let pickupAddress = $state('');
   let submitting    = $state(false);
+
+  // Financial donation form
+  let finName       = $state('');
+  let finEmail      = $state('');
+  let finAmount     = $state<number | ''>('');
+  let finMessage    = $state('');
+  let finSubmitting = $state(false);
+  let finSubmitted  = $state(false);
+
+  async function submitFinancial() {
+    if (!finName.trim() || !finEmail.trim() || !finAmount) return;
+    finSubmitting = true;
+    try {
+      await submitFinancialDonation({
+        donorName: finName.trim(),
+        donorEmail: finEmail.trim(),
+        amount: Number(finAmount),
+        message: finMessage.trim() || undefined
+      });
+      finSubmitted = true;
+      showToast('Thank you for your donation!');
+    } catch (e: any) {
+      showToast(e.message || 'Failed to submit donation', 'error');
+    } finally {
+      finSubmitting = false;
+    }
+  }
 
   // ── Derived ───────────────────────────────────────────
   let selectedOrg     = $derived(orgs.find(o => o.id === selectedOrgId) ?? null);
@@ -195,7 +223,9 @@
         body.pickupAddress = pickupAddress;
         body.pickupCity    = donorCity;
       }
-      submittedDonation = await createDonation(body);
+      const fullItem = selectedItem; // capture before form reset
+      const donation = await createDonation(body);
+      submittedDonation = { ...donation, item: fullItem ?? donation.item };
       showToast('Thank you! Your donation has been submitted.');
       donorName = ''; donorEmail = ''; donorPhone = ''; quantity = 1; expiryDate = '';
       pickupAddress = ''; donationType = 'DROP_OFF';
@@ -234,6 +264,9 @@
         <button
           class="px-5 py-2 rounded-lg text-sm font-medium transition-colors {activeTab === 'donate' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}"
           onclick={() => activeTab = 'donate'}>Make a Donation</button>
+        <button
+          class="px-5 py-2 rounded-lg text-sm font-medium transition-colors {activeTab === 'financial' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}"
+          onclick={() => activeTab = 'financial'}>💰 Donate Money</button>
       </div>
     </div>
 
@@ -364,7 +397,7 @@
     <!-- ══════════════════════════════════════════════════ -->
     <!--  DONATE TAB — 3-step flow                        -->
     <!-- ══════════════════════════════════════════════════ -->
-    {:else}
+    {:else if activeTab === 'donate'}
       {#if submittedDonation}
         <!-- SUCCESS STATE -->
         <div class="max-w-sm mx-auto bg-green-50 border border-green-100 rounded-2xl p-8 text-center">
@@ -380,7 +413,7 @@
             </p>
           {:else}
             <p class="text-sm text-green-600 mt-3">
-              You'll receive drop-off details at <strong>{submittedDonation.donorEmail}</strong>.
+              We'll send donation status updates to <strong>{submittedDonation.donorEmail}</strong>.
             </p>
           {/if}
           <p class="text-gray-400 text-xs mt-4">Donation ID: #{submittedDonation.id}</p>
@@ -699,5 +732,100 @@
         </div>
       {/if}
     {/if}
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!--  FINANCIAL DONATION TAB                           -->
+    <!-- ══════════════════════════════════════════════════ -->
+    {#if activeTab === 'financial'}
+      <div class="max-w-lg mx-auto">
+        {#if finSubmitted}
+          <div class="bg-white rounded-2xl border border-gray-100 p-8 text-center space-y-4">
+            <div class="text-5xl">💚</div>
+            <h2 class="text-xl font-bold text-gray-900">Thank you for your generosity!</h2>
+            <p class="text-gray-500 text-sm">Your financial donation has been recorded. Every dollar helps shelters serve more people in need.</p>
+            <button
+              onclick={() => { finSubmitted = false; finName = ''; finEmail = ''; finAmount = ''; finMessage = ''; }}
+              class="mt-2 px-6 py-2 bg-brand-500 text-white rounded-lg text-sm font-medium hover:bg-brand-600 transition-colors">
+              Donate Again
+            </button>
+          </div>
+        {:else}
+          <div class="bg-white rounded-2xl border border-gray-100 p-6 space-y-5">
+            <div>
+              <h2 class="text-lg font-bold text-gray-900">Financial Donation</h2>
+              <p class="text-sm text-gray-500 mt-1">Support local shelters with a monetary contribution. Your donation will be distributed to where it's needed most.</p>
+            </div>
+
+            <form onsubmit={(e) => { e.preventDefault(); submitFinancial(); }} class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+                <input
+                  type="text"
+                  bind:value={finName}
+                  required
+                  placeholder="Jane Smith"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"/>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <input
+                  type="email"
+                  bind:value={finEmail}
+                  required
+                  placeholder="jane@example.com"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"/>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Amount (CAD)</label>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-3 flex items-center text-gray-400 text-sm">$</span>
+                  <input
+                    type="number"
+                    bind:value={finAmount}
+                    min="1"
+                    step="0.01"
+                    required
+                    placeholder="0.00"
+                    class="w-full border border-gray-200 rounded-lg pl-7 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"/>
+                </div>
+                <!-- Quick amount buttons -->
+                <div class="flex gap-2 mt-2">
+                  {#each [10, 25, 50, 100] as preset}
+                    <button
+                      type="button"
+                      onclick={() => finAmount = preset}
+                      class="flex-1 py-1.5 text-xs font-medium rounded-lg border transition-colors
+                        {finAmount === preset
+                          ? 'bg-brand-500 text-white border-brand-500'
+                          : 'border-gray-200 text-gray-600 hover:border-brand-400 hover:text-brand-600'}">
+                      ${preset}
+                    </button>
+                  {/each}
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Message <span class="text-gray-400 font-normal">(optional)</span></label>
+                <textarea
+                  bind:value={finMessage}
+                  rows="3"
+                  placeholder="Leave a note for the shelters…"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 resize-none"/>
+              </div>
+
+              <button
+                type="submit"
+                disabled={finSubmitting || !finName.trim() || !finEmail.trim() || !finAmount}
+                class="w-full py-2.5 bg-brand-500 text-white rounded-lg text-sm font-semibold hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                {finSubmitting ? 'Submitting…' : '💚 Submit Donation'}
+              </button>
+            </form>
+          </div>
+        {/if}
+      </div>
+    {/if}
+
   </div>
 </div>

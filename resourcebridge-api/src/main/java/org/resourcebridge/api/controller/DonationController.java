@@ -1,10 +1,15 @@
 package org.resourcebridge.api.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.resourcebridge.api.dto.PageResponse;
 import org.resourcebridge.api.entity.Donation;
 import org.resourcebridge.api.enums.DonationStatus;
+import org.resourcebridge.api.repository.DonationRepository;
 import org.resourcebridge.api.service.DonationService;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,6 +20,7 @@ import java.util.List;
 public class DonationController {
 
     private final DonationService donationService;
+    private final DonationRepository donationRepository;
 
     // GET /api/donations — coordinator sees all OFFERED donations
     @GetMapping
@@ -25,6 +31,15 @@ public class DonationController {
     @GetMapping("/all")
     public List<Donation> getAll() {
         return donationService.getAll();
+    }
+
+    // GET /api/donations/page?page=0&size=20 — paginated all donations (admin view)
+    @GetMapping("/page")
+    public PageResponse<Donation> getAllPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return PageResponse.of(donationRepository.findAll(pageable));
     }
 
     @GetMapping("/{id}")
@@ -52,7 +67,7 @@ public class DonationController {
 
     // POST /api/donations — donor submits a donation offer (no token required)
     @PostMapping
-    public ResponseEntity<Donation> create(@RequestBody Donation donation) {
+    public ResponseEntity<Donation> create(@Valid @RequestBody Donation donation) {
         return ResponseEntity.ok(donationService.save(donation));
     }
 

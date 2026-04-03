@@ -9,6 +9,7 @@ import org.resourcebridge.api.enums.Role;
 public class AuthResponse {
     private Long id;
     private String token;
+    private String refreshToken;
     private String name;
     private String email;
     private Role role;

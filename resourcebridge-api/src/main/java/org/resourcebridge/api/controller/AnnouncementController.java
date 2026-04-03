@@ -5,6 +5,7 @@ import org.resourcebridge.api.entity.Announcement;
 import org.resourcebridge.api.enums.AnnouncementType;
 import org.resourcebridge.api.service.AnnouncementService;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,7 +41,7 @@ public class AnnouncementController {
 
     // POST /api/announcements — shelter staff posts expiry/surplus/urgent announcement
     @PostMapping
-    public ResponseEntity<Announcement> create(@RequestBody Announcement announcement) {
+    public ResponseEntity<Announcement> create(@Valid @RequestBody Announcement announcement) {
         return ResponseEntity.ok(announcementService.save(announcement));
     }
 

@@ -6,6 +6,7 @@ import org.resourcebridge.api.enums.DonationStatus;
 import org.resourcebridge.api.exception.ResourceNotFoundException;
 import org.resourcebridge.api.repository.DonationRepository;
 import org.resourcebridge.api.service.DonationService;
+import org.resourcebridge.api.service.EmailService;
 import org.resourcebridge.api.service.MatchingService;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,7 @@ public class DonationServiceImpl implements DonationService {
 
     private final DonationRepository donationRepository;
     private final MatchingService matchingService;
+    private final EmailService emailService;
 
     @Override
     public List<Donation> getAll() {
@@ -69,6 +71,11 @@ public class DonationServiceImpl implements DonationService {
     public Donation updateStatus(Long donationId, DonationStatus status) {
         Donation donation = getById(donationId);
         donation.setStatus(status);
-        return donationRepository.save(donation);
+        Donation saved = donationRepository.save(donation);
+
+        // Notify donor asynchronously on meaningful status changes
+        emailService.sendDonationStatusEmail(saved);
+
+        return saved;
     }
 }

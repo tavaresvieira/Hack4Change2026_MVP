@@ -1,4 +1,4 @@
-export type Role = 'STAFF';
+export type Role = 'STAFF' | 'ADMIN';
 export type Urgency = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type ItemCategory = 'FOOD' | 'CLOTHING' | 'HYGIENE' | 'BEDDING' | 'OTHER';
 export type DonationStatus = 'OFFERED' | 'ASSIGNED' | 'DELIVERED' | 'RECEIVED';
@@ -81,6 +81,7 @@ export interface Announcement {
 export interface AuthResponse {
   id: number;
   token: string;
+  refreshToken: string;
   name: string;
   email: string;
   role: Role;

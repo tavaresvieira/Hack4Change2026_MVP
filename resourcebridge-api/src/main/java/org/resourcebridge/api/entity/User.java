@@ -2,11 +2,17 @@ package org.resourcebridge.api.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.resourcebridge.api.enums.Role;
+
+import java.time.LocalDateTime;
 
 @Data
 @Entity
 @Table(name = "users")
+@SQLDelete(sql = "UPDATE users SET deleted_at = NOW() WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class User {
 
     @Id
@@ -22,10 +28,12 @@ public class User {
     private String password; // null for donors (no account)
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     private Role role;
 
     @ManyToOne
     @JoinColumn(name = "organization_id")
     private Organization organization; // null for donors
+
+    private LocalDateTime deletedAt;
 }

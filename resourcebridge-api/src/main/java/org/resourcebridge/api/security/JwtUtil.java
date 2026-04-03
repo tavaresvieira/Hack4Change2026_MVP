@@ -12,7 +12,7 @@ import java.util.Date;
 public class JwtUtil {
 
     private static final String SECRET = "resourcebridge-secret-key-2026-hackathon-secure";
-    private static final long EXPIRATION_MS = 86400000; // 24 hours
+    private static final long EXPIRATION_MS = 900000; // 15 minutes
 
     private final SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes());
 

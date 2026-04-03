@@ -1,25 +1,40 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getUnfulfilled } from '$lib/api/needs';
+  import { getUnfulfilledPaged } from '$lib/api/needs';
   import UrgencyBadge from '$lib/components/UrgencyBadge.svelte';
+  import Pagination from '$lib/components/Pagination.svelte';
   import type { Need } from '$lib/types';
 
-  let needs   = $state<Need[]>([]);
-  let loading = $state(true);
+  let needs        = $state<Need[]>([]);
+  let loading      = $state(true);
+  let currentPage  = $state(0);
+  let totalPages   = $state(0);
+  let totalElements = $state(0);
+  const PAGE_SIZE  = 12;
 
-  const URGENCY_ORDER: Record<string, number> = { CRITICAL: 0, HIGH: 1 };
+  const URGENCY_ORDER: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
   let urgentNeeds = $derived(
     needs
       .filter(n => n.urgency === 'CRITICAL' || n.urgency === 'HIGH')
-      .sort((a, b) => (URGENCY_ORDER[a.urgency] ?? 1) - (URGENCY_ORDER[b.urgency] ?? 1))
+      .sort((a, b) => (URGENCY_ORDER[a.urgency] ?? 2) - (URGENCY_ORDER[b.urgency] ?? 2))
+  );
+  let otherNeeds = $derived(
+    needs.filter(n => n.urgency !== 'CRITICAL' && n.urgency !== 'HIGH')
   );
 
-  onMount(async () => {
+  async function loadPage(page: number) {
+    loading = true;
     try {
-      needs = await getUnfulfilled();
+      const result = await getUnfulfilledPaged(page, PAGE_SIZE);
+      needs = result.content;
+      currentPage = result.page;
+      totalPages = result.totalPages;
+      totalElements = result.totalElements;
     } catch {}
     finally { loading = false; }
-  });
+  }
+
+  onMount(() => loadPage(0));
 </script>
 
 <svelte:head><title>ResourceBridge — Donate to Moncton Homeless Organisations</title></svelte:head>
@@ -56,13 +71,16 @@
       <p class="text-sm text-gray-400 mt-4">Takes about 1 minute · No account needed</p>
     </div>
 
-    <!-- URGENT NEEDS -->
+    <!-- NEEDS LIST -->
     <div>
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
           <span>🚨</span> Urgent Needs
+          {#if !loading && totalElements > 0}
+            <span class="text-sm font-normal text-gray-400">({totalElements} open)</span>
+          {/if}
         </h2>
-        <a href="/donate" class="text-sm text-brand-600 font-medium hover:underline">See all →</a>
+        <a href="/donate" class="text-sm text-brand-600 font-medium hover:underline">Donate →</a>
       </div>
 
       {#if loading}
@@ -72,7 +90,7 @@
           {/each}
         </div>
 
-      {:else if urgentNeeds.length === 0}
+      {:else if needs.length === 0}
         <div class="bg-white rounded-2xl p-8 text-center text-gray-400 border border-gray-100">
           <div class="text-3xl mb-2">🎉</div>
           <div class="font-medium">No urgent needs right now</div>
@@ -80,30 +98,66 @@
         </div>
 
       {:else}
-        <div class="space-y-3">
-          {#each urgentNeeds as need}
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100
-                        {need.urgency === 'CRITICAL' ? 'border-l-4 border-l-red-400' : 'border-l-4 border-l-orange-300'}">
-              <div class="flex items-center justify-between gap-4">
-                <div class="min-w-0">
-                  <div class="font-bold text-gray-900 text-lg leading-tight">{need.item?.name}</div>
-                  <div class="text-sm text-gray-500 mt-1">{need.organization?.name}</div>
-                  <div class="text-sm text-gray-600 mt-1">
-                    Needs <span class="font-semibold text-brand-600">{need.quantityNeeded} {need.item?.unit}</span>
+        <!-- Critical / High first -->
+        {#if urgentNeeds.length > 0}
+          <div class="space-y-3 mb-4">
+            {#each urgentNeeds as need}
+              <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100
+                          {need.urgency === 'CRITICAL' ? 'border-l-4 border-l-red-400' : 'border-l-4 border-l-orange-300'}">
+                <div class="flex items-center justify-between gap-4">
+                  <div class="min-w-0">
+                    <div class="font-bold text-gray-900 text-lg leading-tight">{need.item?.name}</div>
+                    <div class="text-sm text-gray-500 mt-1">{need.organization?.name}</div>
+                    <div class="text-sm text-gray-600 mt-1">
+                      Needs <span class="font-semibold text-brand-600">{need.quantityNeeded} {need.item?.unit}</span>
+                    </div>
+                  </div>
+                  <div class="flex flex-col items-end gap-2 shrink-0">
+                    <UrgencyBadge urgency={need.urgency} />
+                    <a href="/donate?tab=donate&orgId={need.organization?.id}&itemId={need.item?.id}"
+                      class="bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold
+                             px-5 py-2 rounded-xl transition-colors whitespace-nowrap">
+                      Donate this
+                    </a>
                   </div>
                 </div>
-                <div class="flex flex-col items-end gap-2 shrink-0">
+              </div>
+            {/each}
+          </div>
+        {/if}
+
+        <!-- Medium / Low -->
+        {#if otherNeeds.length > 0}
+          {#if urgentNeeds.length > 0}
+            <h3 class="text-sm font-semibold text-gray-500 mb-3 mt-2">Other needs</h3>
+          {/if}
+          <div class="space-y-2">
+            {#each otherNeeds as need}
+              <div class="bg-white rounded-2xl px-5 py-4 shadow-sm border border-gray-100 flex items-center justify-between gap-4">
+                <div class="min-w-0">
+                  <span class="font-medium text-gray-900">{need.item?.name}</span>
+                  <span class="text-xs text-gray-400 ml-2">{need.organization?.name}</span>
+                  <span class="text-xs text-gray-500 ml-2">{need.quantityNeeded} {need.item?.unit}</span>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
                   <UrgencyBadge urgency={need.urgency} />
                   <a href="/donate?tab=donate&orgId={need.organization?.id}&itemId={need.item?.id}"
-                    class="bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold
-                           px-5 py-2 rounded-xl transition-colors whitespace-nowrap">
-                    Donate this
+                    class="text-brand-600 hover:text-brand-700 text-sm font-medium whitespace-nowrap">
+                    Donate →
                   </a>
                 </div>
               </div>
-            </div>
-          {/each}
-        </div>
+            {/each}
+          </div>
+        {/if}
+
+        <Pagination
+          page={currentPage}
+          {totalPages}
+          {totalElements}
+          size={PAGE_SIZE}
+          onchange={(p) => { loadPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+        />
       {/if}
     </div>
 

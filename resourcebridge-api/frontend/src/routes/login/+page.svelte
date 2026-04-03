@@ -14,9 +14,15 @@
     error = '';
     try {
       const res = await login(email, password);
+      if (res.role === 'ADMIN') {
+        // Admin accidentally used the staff portal — redirect them
+        auth.setAuth(res);
+        goto('/dashboard/admin');
+        return;
+      }
       auth.setAuth(res);
       showToast(`Welcome back, ${res.name}!`);
-      goto('/dashboard');
+      goto('/dashboard/staff');
     } catch (e: any) {
       error = e.message || 'Invalid email or password';
     } finally {
@@ -33,8 +39,8 @@
       <div class="w-14 h-14 bg-brand-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
         <span class="text-white font-bold text-xl">RB</span>
       </div>
-      <h1 class="text-2xl font-bold text-gray-900">Welcome back</h1>
-      <p class="text-sm text-gray-500 mt-1">Sign in to your account</p>
+      <h1 class="text-2xl font-bold text-gray-900">Staff Portal</h1>
+      <p class="text-sm text-gray-500 mt-1">Sign in to your staff account</p>
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -70,12 +76,14 @@
       </form>
     </div>
 
-    <p class="text-center text-sm text-gray-500 mt-4">
-      Don't have an account?
-      <a href="/register" class="text-brand-600 font-medium hover:underline">Register</a>
+    <p class="text-center text-xs text-gray-400 mt-4">
+      Staff accounts are created by invitation only.
     </p>
     <p class="text-center text-sm text-gray-500 mt-2">
       <a href="/donate" class="text-brand-600 font-medium hover:underline">← Browse needs as a donor</a>
+    </p>
+    <p class="text-center text-xs text-gray-400 mt-2">
+      Admin? <a href="/admin" class="text-purple-500 hover:text-purple-700 underline">Admin portal →</a>
     </p>
   </div>
 </div>

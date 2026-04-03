@@ -4,6 +4,7 @@ import type { Role } from '$lib/types';
 interface AuthState {
   id: number | null;
   token: string | null;
+  refreshToken: string | null;
   name: string | null;
   email: string | null;
   role: Role | null;
@@ -12,7 +13,7 @@ interface AuthState {
 }
 
 const defaultState: AuthState = {
-  id: null, token: null, name: null, email: null, role: null, organizationId: null, organizationName: null
+  id: null, token: null, refreshToken: null, name: null, email: null, role: null, organizationId: null, organizationName: null
 };
 
 function createAuthStore() {
@@ -27,7 +28,7 @@ function createAuthStore() {
         try { set(JSON.parse(stored)); } catch { set(defaultState); }
       }
     },
-    setAuth: (data: { id: number; token: string; name: string; email: string; role: Role; organizationId: number; organizationName: string | null }) => {
+    setAuth: (data: { id: number; token: string; refreshToken: string; name: string; email: string; role: Role; organizationId: number; organizationName: string | null }) => {
       set(data);
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem('auth', JSON.stringify(data));
@@ -46,3 +47,4 @@ export const auth = createAuthStore();
 export const isLoggedIn = derived(auth, $a => !!$a.token);
 export const isCoordinator = derived(auth, $a => $a.role === 'COORDINATOR');
 export const isStaff = derived(auth, $a => $a.role === 'STAFF');
+export const isAdmin = derived(auth, $a => $a.role === 'ADMIN');
